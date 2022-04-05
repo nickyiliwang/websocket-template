@@ -1,6 +1,6 @@
 exports.handler = async (e) => {
   if (e.requestContext) {
-    // console.log("event log", e);
+    console.log("event log", e);
   }
 
   const response = {

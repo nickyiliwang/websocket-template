@@ -1,11 +1,11 @@
 service: sls-ws-template
-
+variablesResolutionMode: 20210219
 provider:
   name: aws
   profile: iamadmin
-  runtime: nodejs12.x
-  region: ${env:AWS_REGION}
-  stage: ${env:STAGE}
+  runtime: nodejs14.x
+  region: us-east-1
+  stage: dev
   websocketsApiName: ws-template
   # custom routes are selected by the value of the action property in the body
   websocketsApiRouteSelectionExpression: $request.body.action
@@ -72,7 +72,7 @@ functions:
 
 resources:
   Resources:
-    PostsTable:
+    TemplateTable:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
@@ -84,9 +84,15 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-        TableName: ${env:TABLE_NAME}
+        TableName: ${self:custom.ddb.TABLE_NAME}
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
 
 custom:
+  ddb:
+      TABLE_NAME: WS-Template
   dynamodb:
       stages:
           - dev
@@ -96,8 +102,3 @@ custom:
           migrate: true
       migration:
           dir: offline/migrations
-
-plugins:
-  - serverless-dotenv-plugin
-  - serverless-dynamodb-local
-  - serverless-offline

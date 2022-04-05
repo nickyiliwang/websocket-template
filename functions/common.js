@@ -1,5 +1,5 @@
 const AWS = require("aws-sdk");
-const ENDPOINT = "";
+const ENDPOINT = process.env.ENDPOINT;
 const { uniqueNamesGenerator, starWars } = require("unique-names-generator");
 
 // allows you to directly manage runtime aspects of your deployed APIs
