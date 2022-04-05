@@ -1,0 +1,103 @@
+service: sls-ws-template
+
+provider:
+  name: aws
+  profile: iamadmin
+  runtime: nodejs12.x
+  region: ${env:AWS_REGION}
+  stage: ${env:STAGE}
+  websocketsApiName: ws-template
+  # custom routes are selected by the value of the action property in the body
+  websocketsApiRouteSelectionExpression: $request.body.action
+  # AWS Managed policy
+  # arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess
+  iam:
+    role:
+      statements:
+        - Effect: 'Allow'
+          Action:
+            - 'execute-api:Invoke'
+            - 'execute-api:ManageConnections'
+          Resource: 'arn:aws:execute-api:*:*:*'
+        # DDB
+        - Effect: Allow
+          Action:
+            - dynamodb:DeleteItem
+            - dynamodb:GetItem
+            - dynamodb:Scan
+            - dynamodb:PutItem
+          Resource:
+            Fn::GetAtt:
+              - ConnectionsTable
+              - Arn
+
+functions:
+# Connection
+  connect:
+    handler: functions/connect.handler
+    events:
+      - websocket:
+          route: $connect
+
+  disconnect:
+    handler: functions/disconnect.handler
+    events:
+      - websocket:
+          route: $disconnect
+
+  default:
+    handler: functions/default.handler
+    events:
+      #simple event definition without extra route property
+      - websocket: $default
+
+# Settings
+  setName:
+    handler: functions/setName.handler
+    events:
+      - websocket:
+          route: rename
+
+# Chat function
+  sendPublic:
+    handler: functions/sendPublic.handler
+    events:
+      - websocket:
+          route: public
+  sendPrivate:
+    handler: functions/sendPrivate.handler
+    events:
+      - websocket:
+          route: private
+
+resources:
+  Resources:
+    PostsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${env:TABLE_NAME}
+
+custom:
+  dynamodb:
+      stages:
+          - dev
+      start:
+          port: 8000
+          inMemory: true
+          migrate: true
+      migration:
+          dir: offline/migrations
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-dynamodb-local
+  - serverless-offline
