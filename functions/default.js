@@ -1,20 +1,17 @@
-const common = require("./common");
-const handleNames = common.handleNames;
+const { db, TABLE_NAME, response } = require("./common");
 
 exports.handler = async (e) => {
-  const {
-    // body,
-    requestContext: { connectionId },
-  } = e;
-  try {
-    await handleNames.generateNewName(connectionId);
-  } catch (error) {
-    console.log(error);
-  }
+  let result = await db
+    .scan({
+      TableName: TABLE_NAME,
+    })
+    .promise()
+    .then((res) => {
+      console.log(res);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 
-  const response = {
-    statusCode: 200,
-  };
-
-  return response;
+  return response(200, result);
 };

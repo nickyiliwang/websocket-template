@@ -1,6 +1,23 @@
 const AWS = require("aws-sdk");
-const ENDPOINT = process.env.ENDPOINT;
+const ENDPOINT = "example.com";
+const TABLE_NAME = "WS-Template";
 const { uniqueNamesGenerator, starWars } = require("unique-names-generator");
+
+const { v4: uuid } = require("uuid");
+
+function response(statusCode, message) {
+  return {
+    statusCode: statusCode,
+    body: JSON.stringify(message),
+  };
+}
+
+const db = process.env.IS_OFFLINE
+  ? new AWS.DynamoDB.DocumentClient({
+      region: "localhost",
+      endpoint: "http://localhost:8000",
+    })
+  : new AWS.ApiGatewayManagementApi({ endpoint: ENDPOINT });
 
 // allows you to directly manage runtime aspects of your deployed APIs
 const client = process.env.IS_OFFLINE
@@ -89,5 +106,8 @@ const handleNames = {
 
 exports.sendToOne = sendToOne;
 exports.sendToAll = sendToAll;
+exports.response = response;
 exports.handleNames = handleNames;
 exports.client = client;
+exports.db = db;
+exports.TABLE_NAME = TABLE_NAME;
