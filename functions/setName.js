@@ -1,6 +1,6 @@
-const { db, TABLE_NAME, sendToOne } = require("./common");
+const { db, TABLE_NAME, sendToOne, response } = require("./common");
 
-exports.handler = async (e) => {
+exports.handler = async (e, context, cb) => {
   let body = {};
   try {
     if (e.body) {
@@ -25,7 +25,8 @@ exports.handler = async (e) => {
     ReturnValues: "ALL_NEW",
   };
 
-  db.update(params)
+  await db
+    .update(params)
     .promise()
     .then(async ({ Attributes }) => {
       try {
@@ -40,10 +41,5 @@ exports.handler = async (e) => {
       console.error(err);
     });
 
-  const response = {
-    statusCode: 200,
-    body: JSON.stringify("Success !"),
-  };
-
-  return response;
+  return cb(null, response(200, "Rename"));
 };

@@ -1,11 +1,20 @@
 service: sls-ws-template
-variablesResolutionMode: 20210219
 provider:
   name: aws
   profile: iamadmin
   runtime: nodejs14.x
   region: us-east-1
-  stage: dev
+  stage: ${self:custom.stage}
+  environment:
+    TABLE_NAME: ${self:service}-${opt:stage, self:provider.stage}-table
+    ENDPOINT:
+      Fn::Join:
+        - ''
+        - - Ref: WebsocketsApi
+          - .execute-api.
+          - Ref: AWS::Region
+          - .amazonaws.com/
+          - ${self:custom.stage}
   websocketsApiName: ws-template
   # custom routes are selected by the value of the action property in the body
   websocketsApiRouteSelectionExpression: $request.body.action
@@ -14,21 +23,17 @@ provider:
   iam:
     role:
       statements:
-        - Effect: 'Allow'
-          Action:
-            - 'execute-api:Invoke'
-            - 'execute-api:ManageConnections'
-          Resource: 'arn:aws:execute-api:*:*:*'
-        # DDB
         - Effect: Allow
           Action:
             - dynamodb:DeleteItem
             - dynamodb:GetItem
             - dynamodb:Scan
             - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:Query
           Resource:
             Fn::GetAtt:
-              - ConnectionsTable
+              - TemplateTable
               - Arn
 
 functions:
@@ -82,23 +87,19 @@ resources:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
-        - AttributeName: "id"
-          AttributeType: "S"
+          - AttributeName: id
+            AttributeType: S
         KeySchema:
-        - AttributeName: "id"
-          KeyType: "HASH"
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: ${self:custom.ddb.TABLE_NAME}
-
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.TABLE_NAME}
 plugins:
   - serverless-dynamodb-local
   - serverless-offline
 
 custom:
-  ddb:
-      TABLE_NAME: WS-Template
+  stage: ${opt:stage, 'dev'}
   dynamodb:
       stages:
           - dev

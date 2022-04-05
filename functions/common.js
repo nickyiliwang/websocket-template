@@ -1,5 +1,5 @@
 const AWS = require("aws-sdk");
-const TABLE_NAME = "WS-Template";
+const TABLE_NAME = process.env.TABLE_NAME;
 const { uniqueNamesGenerator, starWars } = require("unique-names-generator");
 
 function response(statusCode, message) {
@@ -20,14 +20,17 @@ const client = process.env.IS_OFFLINE
   ? new AWS.ApiGatewayManagementApi({
       endpoint: "http://localhost:3001",
     })
-  : new AWS.ApiGatewayManagementApi();
+  : new AWS.ApiGatewayManagementApi({
+      apiVersion: "2018-11-29",
+      endpoint: process.env.ENDPOINT,
+    });
 
 const sendToOne = async (id, body) => {
   try {
     await client
       .postToConnection({
         ConnectionId: id,
-        Data: Buffer.from(JSON.stringify(body)),
+        Data: JSON.stringify(body),
       })
       .promise();
   } catch (error) {
@@ -42,7 +45,7 @@ const sendToAll = async (ids, body) => {
   return Promise.all(shout);
 };
 
-const generateNewName = async () => {
+const generateNewName = () => {
   const randomName = uniqueNamesGenerator({
     dictionaries: [starWars],
   });

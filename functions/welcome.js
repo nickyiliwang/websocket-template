@@ -1,25 +1,24 @@
-const { db, TABLE_NAME, sendToOne } = require("./common");
+const { db, TABLE_NAME, sendToOne, response } = require("./common");
 
-exports.handler = async (e) => {
+exports.handler = async (e, context, cb) => {
   if (e.requestContext) {
     const id = e.requestContext.connectionId;
-    db.get({
-      TableName: TABLE_NAME,
-      Key: {
-        id,
-      },
-    })
+    await db
+      .get({
+        TableName: TABLE_NAME,
+        Key: {
+          id,
+        },
+      })
       .promise()
-      .then(({ Item }) => {
+      .then(async ({ Item }) => {
         console.log("get success!", Item);
-        sendToOne(id, `Hello there ${Item.username} !`);
+        await sendToOne(id, `Hello there ${Item.username}!`);
       })
       .catch((err) => {
         console.error(err);
       });
   }
 
-  return {
-    statusCode: 200,
-  };
+  return cb(null, response(200, "welcome"));
 };

@@ -1,17 +1,24 @@
-const { db, TABLE_NAME, response } = require("./common");
+const { db, TABLE_NAME, response, sendToOne } = require("./common");
 
-exports.handler = async (e) => {
-  let result = await db
-    .scan({
-      TableName: TABLE_NAME,
-    })
-    .promise()
-    .then((res) => {
-      console.log(res);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+exports.handler = async (event, context, cb) => {
+  let result;
+  const id = event.requestContext.connectionId;
 
-  return response(200, result);
+  try {
+    result = await db
+      .scan({
+        TableName: TABLE_NAME,
+      })
+      .promise();
+  } catch (error) {
+    console.error(error);
+  }
+
+  try {
+    await sendToOne(id, result);
+  } catch (error) {
+    console.error(error);
+  }
+
+  return cb(null, response(200, "default"));
 };
