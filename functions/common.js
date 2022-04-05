@@ -1,5 +1,4 @@
 const AWS = require("aws-sdk");
-const ENDPOINT = "example.com";
 const TABLE_NAME = "WS-Template";
 const { uniqueNamesGenerator, starWars } = require("unique-names-generator");
 
@@ -15,13 +14,13 @@ const db = process.env.IS_OFFLINE
       region: "localhost",
       endpoint: "http://localhost:8000",
     })
-  : new AWS.ApiGatewayManagementApi({ endpoint: ENDPOINT });
+  : new AWS.DynamoDB.DocumentClient();
 
 const client = process.env.IS_OFFLINE
   ? new AWS.ApiGatewayManagementApi({
       endpoint: "http://localhost:3001",
     })
-  : new AWS.ApiGatewayManagementApi({ endpoint: ENDPOINT });
+  : new AWS.ApiGatewayManagementApi();
 
 const sendToOne = async (id, body) => {
   try {
