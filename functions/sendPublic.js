@@ -1,34 +1,20 @@
-const common = require("./common");
+const { db, TABLE_NAME, response, sendToAll } = require("./common");
 
+// ideally we don't want to scan the database
 exports.handler = async (e) => {
-  if (e.requestContext) {
-    // console.log("event log", e);
+  await db
+    .scan({
+      TableName: TABLE_NAME,
+    })
+    .promise()
+    .then(({ Items }) => {
+      console.log("scan success!", Items);
+      const body = JSON.parse(e.body);
+      sendToAll(Items, body.message);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 
-    // might need domainName, stage
-    const connectionId = e.requestContext.connectionId;
-    const routeKey = e.requestContext.routeKey;
-
-    let body = {};
-    try {
-      if (e.body) {
-        // expect stringified JSON
-        body = JSON.parse(e.body);
-      }
-    } catch (error) {}
-
-    if (routeKey === "public") {
-      const message = body.message;
-
-      await common.sendToAll([connectionId], {
-        publicMessage: message,
-      });
-    }
-  }
-
-  const response = {
-    statusCode: 200,
-    body: JSON.stringify("Public"),
-  };
-
-  return response;
+  return response(200, "public");
 };

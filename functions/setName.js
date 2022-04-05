@@ -1,5 +1,4 @@
-const common = require("./common");
-const handleNames = common.handleNames;
+const { db, TABLE_NAME, sendToOne } = require("./common");
 
 exports.handler = async (e) => {
   let body = {};
@@ -10,24 +9,37 @@ exports.handler = async (e) => {
     }
   } catch (error) {}
 
-  // domainName, stage
-  const { connectionId } = e.requestContext;
+  const id = e.requestContext.connectionId;
+  const name = body.name;
 
-  try {
-    await handleNames.modifyNames(connectionId, body.name);
-  } catch (error) {
-    console.log(error);
-  }
+  const params = {
+    Key: {
+      id: id,
+    },
+    TableName: TABLE_NAME,
+    ConditionExpression: "attribute_exists(id)",
+    UpdateExpression: "SET username = :username",
+    ExpressionAttributeValues: {
+      ":username": name,
+    },
+    ReturnValues: "ALL_NEW",
+  };
 
-  try {
-    await common.sendToOne(connectionId, {
-      systemMessage: `Hey there, your new name is ${body.name}`,
+  db.update(params)
+    .promise()
+    .then(async ({ Attributes }) => {
+      try {
+        await sendToOne(id, {
+          systemMessage: `Hey there, your new name is ${Attributes.username}`,
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    })
+    .catch((err) => {
+      console.error(err);
     });
-  } catch (error) {
-    console.log(error);
-  }
 
-  // https://stackoverflow.com/questions/47672377/message-internal-server-error-when-try-to-access-aws-gateway-api
   const response = {
     statusCode: 200,
     body: JSON.stringify("Success !"),

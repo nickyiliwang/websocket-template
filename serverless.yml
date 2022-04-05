@@ -51,14 +51,20 @@ functions:
       #simple event definition without extra route property
       - websocket: $default
 
-# Settings
+# Name
+  welcome:
+    handler: functions/welcome.handler
+    events:
+      - websocket:
+          route: welcome
+
   setName:
     handler: functions/setName.handler
     events:
       - websocket:
           route: rename
 
-# Chat function
+# Chat 
   sendPublic:
     handler: functions/sendPublic.handler
     events:

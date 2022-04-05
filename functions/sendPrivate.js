@@ -1,37 +1,36 @@
-const common = require("./common");
-const handleNames = common.handleNames;
+const { db, response, TABLE_NAME, sendToOne } = require("./common");
 
 exports.handler = async (e) => {
   if (e.requestContext) {
-    // console.log("event log", e);
+    const id = e.requestContext.connectionId;
+    let senderName;
 
-    // might need domainName, stage
-    const connectionId = e.requestContext.connectionId;
-    const routeKey = e.requestContext.routeKey;
+    db.get({
+      TableName: TABLE_NAME,
+      Key: {
+        id,
+      },
+    })
+      .promise()
+      .then(async ({ Item }) => {
+        console.log("get success!", Item);
+        senderName = Item.username;
 
-    let body = {};
-    try {
-      if (e.body) {
-        // expect stringified JSON
-        body = JSON.parse(e.body);
-      }
-    } catch (error) {}
+        let body = JSON.parse(e.body);
 
-    if (routeKey === "private") {
-      const receiverId = body.receiverId;
-      const message = body.message;
-      const senderName = await handleNames.findName(connectionId);
+        // receiverId needs validation ideally
+        const receiverId = body.receiverId;
+        if (!receiverId) return;
+        const message = body.message;
 
-      await common.sendToOne(receiverId, {
-        privateMessage: `${senderName}: ${message}`,
+        await sendToOne(receiverId, {
+          privateMessage: `${senderName}: ${message}`,
+        });
+      })
+      .catch((err) => {
+        console.error(err);
       });
-    }
   }
 
-  const response = {
-    statusCode: 200,
-    body: JSON.stringify("Public"),
-  };
-
-  return response;
+  return response(200, "Private");
 };

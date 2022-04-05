@@ -1,16 +1,17 @@
-const { db, TABLE_NAME } = require("./common");
+const { db, TABLE_NAME, generateNewName } = require("./common");
 
 exports.handler = async (e) => {
   if (e.requestContext) {
-    console.log("connectionId", e.requestContext.connectionId);
-    db
-      .put({
-        TableName: TABLE_NAME,
-        Item: { id: e.requestContext.connectionId },
-      })
+    const id = e.requestContext.connectionId;
+    const name = await generateNewName();
+
+    db.put({
+      TableName: TABLE_NAME,
+      Item: { id, username: name },
+    })
       .promise()
-      .then((something) => {
-        console.log("success!", something);
+      .then(() => {
+        console.log("put success!", id);
       })
       .catch((err) => {
         console.error(err);

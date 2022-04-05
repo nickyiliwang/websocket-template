@@ -1,17 +1,18 @@
-const { db, TABLE_NAME } = require("./common");
+const { db, TABLE_NAME, sendToOne } = require("./common");
 
 exports.handler = async (e) => {
   if (e.requestContext) {
     const id = e.requestContext.connectionId;
-    db.delete({
+    db.get({
       TableName: TABLE_NAME,
       Key: {
-        id: id,
+        id,
       },
     })
       .promise()
-      .then(() => {
-        console.log("delete success!", id);
+      .then(({ Item }) => {
+        console.log("get success!", Item);
+        sendToOne(id, `Hello there ${Item.username} !`);
       })
       .catch((err) => {
         console.error(err);
